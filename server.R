@@ -130,7 +130,8 @@ shinyServer(function(input, output, session) {
     req(data_dir())
     data_dir <- data_dir()
     list <- list.files(data_dir,pattern = "_stack.tif",recursive = T)
-    unlist(lapply(list,function(x){unlist(strsplit(x,split = "_"))[3]}))
+    
+    unlist(lapply(list,function(x){unlist(strsplit(x,split = "_"))[length(unlist(strsplit(x,split = "_")))-1]}))
     })
   
   beg_year <- reactive({
