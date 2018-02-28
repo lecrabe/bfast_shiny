@@ -104,7 +104,7 @@ shinyServer(function(input, output, session) {
     restrictions = system.file(package = 'base')
   )
   
-  ################################# Display the file path
+  ################################# Data file path
   data_dir <- reactive({
     req(input$time_series_dir)
     validate(need(input$time_series_dir, "Missing input: Please select time series folder"))
@@ -112,20 +112,12 @@ shinyServer(function(input, output, session) {
     
   })
   
-  ################################# Output directory path
-  outdir <- reactive({
-    req(input$time_series_dir)
-    dir <- parseDirPath(volumes, input$time_series_dir)
-    subDir <- paste0(dir,"/","bfast_results")
-    dir.create(subDir)
-    subDir
-    })
-  
-  ################################# Display output directory path
+  ################################# Display tiles inside the DATA_DIR
   output$outdirpath = renderPrint({
-    outdir()
+    list.files(data_dir())
   })
   
+  ################################# Setup from the archives the Date Range
   list_year <- reactive({
     req(data_dir())
     data_dir <- data_dir()
@@ -134,21 +126,21 @@ shinyServer(function(input, output, session) {
     unlist(lapply(list,function(x){unlist(strsplit(x,split = "_"))[length(unlist(strsplit(x,split = "_")))-1]}))
     })
   
+  ################################# Take the minimum as beginning Date
   beg_year <- reactive({
     req(list_year())
     min(list_year())
   })
   
+  ################################# Take the maximum as ending Date
   end_year <- reactive({
     req(list_year())
     max(list_year())
   })
 
   
-  
-  
   ##################################################################################################################################
-  ############### Option buttons
+  ############### Option buttons --> KEEP IF ARCHIVE READING IS NOT OPTIMAL
   # output$ui_option_h_beg <- renderUI({
   #   req(input$time_series_dir)
   #   selectInput(inputId = 'option_h_beg',
@@ -167,6 +159,7 @@ shinyServer(function(input, output, session) {
   #   )
   # })
   
+  ################################# Take the average date for the beginning of monitoring period
   output$ui_option_m_beg <- renderUI({
     req(input$time_series_dir)
     
@@ -211,13 +204,8 @@ shinyServer(function(input, output, session) {
     req(input$time_series_dir)
     req(input$bfastStartButton)
     
-    #validate(need(input$bfastStartButton,"Click "))
-    print(" my reactives")
     data_dir            <- paste0(data_dir(),"/")
-    output_directory    <- paste0(outdir(),"/")
-    
     print(data_dir)
-    print(output_directory)
     
     historical_year_beg <- as.numeric(beg_year())
     monitoring_year_end <- as.numeric(end_year())
@@ -225,15 +213,20 @@ shinyServer(function(input, output, session) {
     monitoring_year_beg <- as.numeric(input$option_m_beg)
     order               <- as.numeric(input$option_order)
     history             <- as.character(input$option_history)
+    
     print(order)
     print(history)
     
-    withProgress(message = 'BFAST running',
+    for(the_dir in list.dirs(data_dir, recursive=FALSE)){
+      
+    withProgress(message = paste0('BFAST running for ',the_dir),
                  value = 0,
                  {
                    setProgress(value = .1)
                    source("www/scripts/bfast_run.R",echo=T,local=T)
                  })
+    }
+    
     raster(outputfile)
   })
   
@@ -241,26 +234,10 @@ shinyServer(function(input, output, session) {
   ############### Processing time as reactive
   process_time <- reactive({
     req(bfast_res())
-    data_dir            <- paste0(data_dir(),"/")
-    output_directory    <- paste0(outdir(),"/")
-    
-    print(data_dir)
-    print(output_directory)
-    
-    historical_year_beg <- as.numeric(beg_year())
-    monitoring_year_end <- as.numeric(end_year())
-    
-    monitoring_year_beg <- as.numeric(input$option_m_beg)
-    order               <- as.numeric(input$option_order)
-    history             <- as.character(input$option_history)
-    title <- paste0("o_",order,"_h_",paste0(history,collapse = "-"))
-    
-    results_directory <- file.path(outdir(),"/",paste0("bfast_",title,'/'))
-    
-    log_filename <- list.files(results_directory,pattern="log")[1]
-    readLines(paste0(results_directory,log_filename))
-    
-  })
+    log_filename <- list.files(data_dir(),pattern="log",recursive = T)[1]
+    print(paste0(data_dir(),"/",log_filename))
+    readLines(paste0(data_dir(),"/",log_filename))
+    })
 
   ############### Display the results as map
   output$display_res <- renderPlot({
@@ -273,7 +250,8 @@ shinyServer(function(input, output, session) {
   ############### Display time
  output$message <- renderText({
    req(bfast_res())
-   print(process_time())
+   print("processing time")
+   process_time()
  })
   
   ##################################################################################################################################

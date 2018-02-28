@@ -58,7 +58,7 @@ output$body_ts_dir  <- reactive({
 
 output$body_output_dir  <- reactive({
   HTML(paste0(
-    "Output directory where the results are stored"
+    "The DATA directory contains the following tiles:"
   )
   )})
 
