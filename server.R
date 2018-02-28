@@ -217,6 +217,8 @@ shinyServer(function(input, output, session) {
     print(order)
     print(history)
     
+    title <- paste0("o_",order,"_h_",paste0(history,collapse = "-"))
+    
     for(the_dir in list.dirs(data_dir, recursive=FALSE)){
       
     withProgress(message = paste0('BFAST running for ',the_dir),
@@ -227,7 +229,16 @@ shinyServer(function(input, output, session) {
                  })
     }
     
-    raster(outputfile)
+    #############################################################
+    ### MERGE AS VRT
+    system(sprintf("gdalbuildvrt %s %s",
+                   paste0(data_dir,"/bfast_",title,"_threshold.vrt"),
+                   paste0(data_dir,"/*/results/bfast_",title,"/bfast_",title,"_threshold.tif")
+    ))
+    print(paste0(data_dir,"/bfast_",title,"_threshold.vrt"))
+    
+    raster(paste0(data_dir,"/bfast_",title,"_threshold.vrt"))
+    
   })
   
   ##################################################################################################################################
@@ -254,25 +265,7 @@ shinyServer(function(input, output, session) {
    process_time()
  })
   
-  ##################################################################################################################################
-  ############### Enable to download the CE file (csv)
-  output$ui_download_csv <- renderUI({
-    req(input$time_series_dir)
-    downloadButton('download_csv',
-                   label = textOutput('download_csv_button'))
-  })
-  
-  ##################################################################################################################################
-  ############### Enable to download the CE file (csv)
-  output$download_csv <- downloadHandler(
-    filename = function() {
-      "zonal_stats.csv"
-    },
-    content  = function(xx) {
-      to_export <- zonal()
-      write.csv(to_export, xx, row.names = FALSE)
-    }
-  )
+
   
   ##################################################################################################################################
   ############### Turn off progress bar

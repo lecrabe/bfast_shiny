@@ -19,9 +19,6 @@ if(file.exists(paste0(the_dir,'/','stack.vrt'))){
   data_input     <- paste0(the_dir,'/','stack.tif')
   the_stack      <- brick(data_input_vrt) 
   
-  
-  title <- paste0("o_",order,"_h_",paste0(history,collapse = "-"))
-  
   results_directory <- file.path(output_directory,
                                  paste0("bfast_",title,'/'))
   
