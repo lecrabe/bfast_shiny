@@ -37,4 +37,4 @@ packages(RColorBrewer)
 ## Packages for BFAST
 packages(bfastSpatial)
 packages(parallel)
-packages(ncdf4)
+#packages(ncdf4)
